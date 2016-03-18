@@ -70,8 +70,8 @@ class ASELoaderData : public SceneLoaderData
 	private:
 
 	public:
-		virtual Bool Identify(PluginSceneLoader *node, const Filename &name, UChar *probe, Int32 size);
-		virtual Int32 Load(PluginSceneLoader *node, const Filename &name, BaseDocument *doc, Int32 filterflags, String *error, BaseThread *bt);
+		virtual Bool Identify(BaseSceneLoader* node, const Filename& name, UChar* probe, Int32 size);
+		virtual FILEERROR Load(BaseSceneLoader* node, const Filename& name, BaseDocument* doc, SCENEFILTER filterflags, String* error, BaseThread* bt);
 
 		Bool ReadLine(BaseFile *bf, String *v);
 		Bool ReadVector(String s,String &id,Vector v);
@@ -86,7 +86,7 @@ class ASESaverData : public SceneSaverData
 	private:	
 		Char		*mem;
 		BaseFile	*file;
-		Int32 CountTriangles(CPolygon *vadr, Int32 vcnt, Int32 &quadcnt);
+		Int32 CountTriangles(const CPolygon *vadr, Int32 vcnt, Int32 &quadcnt);
 		Int32 CountObjects(PolygonObject *sorc, Int32 cnt);
 		Int32 GetMatIDCount(BaseContainer  *idtagdata, BaseDocument *doc);
 		Bool GetSelList(BaseContainer  *idtagdata, BaseDocument *doc, BaseSelect **sel);
@@ -99,7 +99,7 @@ class ASESaverData : public SceneSaverData
 	public:
 		virtual Bool Init(GeListNode *node);
 		virtual void Free(GeListNode *node);
-		virtual Int32 Save(PluginSceneSaver *node, const Filename &name, BaseDocument *doc, Int32 filterflags);
+		virtual FILEERROR Save(BaseSceneSaver* node, const Filename& name, BaseDocument* doc, SCENEFILTER filterflags);
 
 		static NodeData *Alloc(void) { return NewObj(ASESaverData); }
 };
@@ -127,7 +127,7 @@ inline Bool ASELoaderData::ReadLine(BaseFile *bf, String *v)
 
 Bool ASESaverData::Init(GeListNode *node)
 {
-	BaseContainer	*data = ((PluginSceneSaver*)node)->GetDataInstance();
+	BaseContainer	*data = ((BaseSceneLoader*)node)->GetDataInstance();
 	data->SetBool(ASEE_SAVENORMALS,FALSE);
 	data->SetBool(ASEE_REVERSENORMALS,TRUE);
 	data->SetBool(ASEE_MATOBPREFIX,TRUE);
@@ -135,7 +135,7 @@ Bool ASESaverData::Init(GeListNode *node)
 
 	data->SetInt32(ASEE_COMMADIGITS,6);
 
-	mem = (Char*) GeAlloc(sizeof(Char)*2048);//2048 ???
+	mem = NewMemClear(Char, 2048); //(Char*) GeAlloc(sizeof(Char)*2048);//2048 ???
 	if (!mem) return FALSE;
 
 	return TRUE;
@@ -158,7 +158,7 @@ inline Bool ASESaverData::WriteLine(const String &v)
 
 //-----------------------------------------------------------------------------
 //############################ Identify ############################
-Bool ASELoaderData::Identify(PluginSceneLoader *node, const Filename &name, UChar *probe, Int32 size)
+Bool ASELoaderData::Identify(BaseSceneLoader* node, const Filename& name, UChar* probe, Int32 size)
 {
 	//UInt32 *p=(UInt32*)probe,v1=p[0];	
 	//lMotor(&v1); //MAC ?????
@@ -166,16 +166,16 @@ Bool ASELoaderData::Identify(PluginSceneLoader *node, const Filename &name, UCha
 	return TRUE;
 }
 //############################ Load ############################
-Int32 ASELoaderData::Load(PluginSceneLoader *node, const Filename &name, BaseDocument *doc, Int32 filterflags, String *error, BaseThread *bt)
+FILEERROR ASELoaderData::Load(BaseSceneLoader* node, const Filename& name, BaseDocument* doc, SCENEFILTER filterflags, String* error, BaseThread* bt)
 {
-	BaseFile	*file = BaseFile::Alloc(); if (!file) return IMAGE_NOMEM; //???
-	if (!file->Open(name,GE_READ,FILE_NODIALOG,GE_MOTOROLA)) return IMAGE_DISKERROR;
+	BaseFile	*file = BaseFile::Alloc(); if (!file) return FILEERROR_OUTOFMEMORY; //???
+	if (!file->Open(name,FILEOPEN_READ/*,FILE_NODIALOG,GE_MOTOROLA*/)) return FILEERROR_OPEN;
 	BaseFile::Free(file);//???
-	return 1;
+	return FILEERROR_NONE;
 }
 
 //#########################################################
-Int32 ASESaverData::CountTriangles(CPolygon *vadr, Int32 vcnt, Int32 &quadcnt)//WORK
+Int32 ASESaverData::CountTriangles(const CPolygon *vadr, Int32 vcnt, Int32 &quadcnt)//WORK
 {	
 	Int32 tricnt = 0;
 	Int32 i;
@@ -190,13 +190,13 @@ Int32 ASESaverData::CountTriangles(CPolygon *vadr, Int32 vcnt, Int32 &quadcnt)//
 	return tricnt;
 }
 //#########################################################
-PluginTag *GetPlugTag(BaseObject *ob,Int32 id)//OK
+BaseTag *GetPlugTag(BaseObject *ob,Int32 id)//OK
 {
-	PluginTag *tag;
+	BaseTag *tag;
 	Int32 tn = 0;
-	//tag = (PluginTag*)ob->GetFirstTag();if (tag) print(tag->GetNodeID());//TEST
+	//tag = (BaseTag*)ob->GetFirstTag();if (tag) print(tag->GetNodeID());//TEST
 	do{
-		tag = (PluginTag*)ob->GetTag(Tplugin,tn);
+		tag = (BaseTag*)ob->GetTag(Tplugin,tn);
 		if (!tag) break;
 		tn++;
 	}while(tag->GetNodeID()!=id); //GetNodeID ???
@@ -249,15 +249,15 @@ Bool ASESaverData::WriteObject(BaseDocument *doc, PolygonObject *sorc, Int32 &ma
  		Int32	nc = aseedata.commadigits;
 		Matrix	mg = sorc->GetMg();//?????????	
 			
-		Vector		*padr	= sorc->GetPoint();	//if (!padr) return FALSE;
+		const Vector		*padr	= sorc->GetPointR();	//if (!padr) return FALSE;
 		Int32		pcnt	= sorc->GetPointCount();
-		CPolygon   *vadr	= sorc->GetPolygon(); //if (!vadr) return FALSE;
+		const CPolygon   *vadr	= sorc->GetPolygonR(); //if (!vadr) return FALSE;
 		Int32		vcnt	= sorc->GetPolygonCount();
 
 		if (padr && vadr){
 
 			//ID TAG ?????
-			PluginTag		*idtag = GetPlugTag(sorc,DI_IDTAG_TAG_ID);
+			BaseTag		*idtag = GetPlugTag(sorc,DI_IDTAG_TAG_ID);
 			BaseContainer   *idtagdata = nullptr; 
 			Int32			matcnt = 1;
 			if (idtag) {
@@ -288,7 +288,7 @@ Bool ASESaverData::WriteObject(BaseDocument *doc, PolygonObject *sorc, Int32 &ma
 			ObjectColorProperties colorProp;//Color 
 			sorc->GetColorProperties(&colorProp);//Color 
 			UVWTag *uvwtag = (UVWTag*)sorc->GetTag(Tuvw);//if (!uvwtag)
-
+			ConstUVWHandle uv_data = uvwtag->GetDataAddressR();
 			
 			WriteLine("*GEOMOBJECT {");
 			
@@ -325,7 +325,7 @@ Bool ASESaverData::WriteObject(BaseDocument *doc, PolygonObject *sorc, Int32 &ma
 			//VERTEXES
 			WriteLine("		*MESH_VERTEX_LIST {");
 			for (i=0; i<pcnt; i++){
-				pos = padr[i]*mg;
+				pos = mg*padr[i];
 				WriteLine("			*MESH_VERTEX    "+String::IntToString(i)+
 					"   "+String::FloatToString(pos.x,vc,nc)+
 					"   "+String::FloatToString(pos.z,vc,nc)+//TEST z ???
@@ -371,7 +371,8 @@ Bool ASESaverData::WriteObject(BaseDocument *doc, PolygonObject *sorc, Int32 &ma
 				
 				for (i=0; i<vcnt; i++)
 				{
-					norm = !((padr[vadr[i].b]-padr[vadr[i].a])%(padr[vadr[i].c]-padr[vadr[i].a]));//Normal
+					norm = !Cross((padr[vadr[i].b]-padr[vadr[i].a]) , (padr[vadr[i].c]-padr[vadr[i].a]));//Normal
+						//!((padr[vadr[i].b]-padr[vadr[i].a]) % (padr[vadr[i].c]-padr[vadr[i].a]));//Normal
 					WriteLine("			*MESH_FACENORMAL "+String::IntToString(num++)+
 						"   "+String::FloatToString(norm.x,vc,nc)+
 						"   "+String::FloatToString(norm.z,vc,nc)+
@@ -379,7 +380,8 @@ Bool ASESaverData::WriteObject(BaseDocument *doc, PolygonObject *sorc, Int32 &ma
 					//WriteLine("				*MESH_VERTEXNORMAL 0 0.0 0.0 0.0");//TEST
 				
 					if (vadr[i].c!=vadr[i].d){
-						norm = !((padr[vadr[i].c]-padr[vadr[i].a])%(padr[vadr[i].d]-padr[vadr[i].a]));//Normal
+						norm = !Cross((padr[vadr[i].c]-padr[vadr[i].a]),(padr[vadr[i].d]-padr[vadr[i].a]));//Normal
+							//!((padr[vadr[i].c]-padr[vadr[i].a])%(padr[vadr[i].d]-padr[vadr[i].a]));//Normal
 						WriteLine("			*MESH_FACENORMAL "+String::IntToString(num++)+
 							"   "+String::FloatToString(norm.x,vc,nc)+
 							"   "+String::FloatToString(norm.z,vc,nc)+
@@ -397,7 +399,10 @@ Bool ASESaverData::WriteObject(BaseDocument *doc, PolygonObject *sorc, Int32 &ma
 			num = 0;
 			for (i=0; i<vcnt; i++)
 			{		
-					if (uvwtag) uvw = uvwtag->Get(i);  //????!!!!
+				if (uvwtag) {
+					uvwtag->Get(uv_data, i, uvw);
+					//uvw = uvwtag->Get(uv_data, i); 
+				}
 					WriteLine("			*MESH_TVERT    "+String::IntToString(num++)+
 						"   "+String::FloatToString(uvw.a.x,vc,nc)+
 						"   "+String::FloatToString(uvw.a.y,vc,nc)+
@@ -528,7 +533,7 @@ Bool ASESaverData::WriteMaterials(BaseDocument *doc, PolygonObject *sorc, Int32 
 		String		obname = sorc->GetName() + " ";
 
 		//ID TAG
-		PluginTag		*idtag = GetPlugTag(sorc,DI_IDTAG_TAG_ID);
+		BaseTag		*idtag = GetPlugTag(sorc,DI_IDTAG_TAG_ID);
 		BaseContainer   *idtagdata = nullptr; if (idtag) idtagdata = idtag->GetDataInstance();
 		Int32			 matcnt = GetMatIDCount(idtagdata,doc);//TEST
 		SelectionTag	*seltag = nullptr;
@@ -584,8 +589,13 @@ Bool ASESaverData::WriteMaterials(BaseDocument *doc, PolygonObject *sorc, Int32 
 
 	return TRUE;
 }
+
+inline void GeGetSysTime(Int32 *year, Int32 *month, Int32 *day, Int32 *hour, Int32 *minute, Int32 *second) {
+	C4DOS.Ge->GetSysTime(year, month, day, hour, minute, second);
+}
+
 //############################ Save ############################
-Int32 ASESaverData::Save(PluginSceneSaver *node, const Filename &name, BaseDocument *doc, Int32 filterflags)
+FILEERROR ASESaverData::Save(BaseSceneSaver* node, const Filename& name, BaseDocument* doc, SCENEFILTER filterflags)
 {
 	if (!(filterflags&SCENEFILTER_OBJECTS)) return FILEERROR_NONE;
 	
@@ -610,21 +620,22 @@ Int32 ASESaverData::Save(PluginSceneSaver *node, const Filename &name, BaseDocum
 
 		if (aseedata.joinob){
 			// Join
-			ModelingCommandData md2; md2.op = md1.result_ex; //Create OBJECT (md2)
+			ModelingCommandData md2; 
+			md2.op = (BaseObject*)md1.result->GetIndex(0); //Create OBJECT (md2)
 			if (!SendModelingCommand(MCOMMAND_JOIN, md2)){ return FILEERROR_UNKNOWN_VALUE;}
-			BaseObject::Free(md1.result_ex);//FREE OBJECT  (md1)
-			nuop = ToPoly(md2.result_ex);
+			//? BaseObject::Free(md1.result->GetIndex(0));//FREE OBJECT  (md1)
+			nuop = ToPoly(md2.result->GetIndex(0));
 		}else{
-			nuop = ToPoly(md1.result_ex);
+			nuop = ToPoly(md1.result->GetIndex(0));
 		}
 	}else{
 		if (aseedata.joinob){
 			// Join
 			ModelingCommandData md2; md2.op = urop;  //Create OBJECT (md2)
 			if (!SendModelingCommand(MCOMMAND_JOIN, md2)){ return FILEERROR_UNKNOWN_VALUE;}
-			nuop = ToPoly(md2.result_ex);
+			nuop = ToPoly(md2.result->GetIndex(0));
 		}else{
-			nuop = ToPoly(urop->GetClone(0,nullptr));
+			nuop = ToPoly(urop->GetClone(COPYFLAGS_0,nullptr));
 		}
 	}
 	if (!nuop){ return FILEERROR_UNKNOWN_VALUE;}
@@ -640,8 +651,8 @@ Int32 ASESaverData::Save(PluginSceneSaver *node, const Filename &name, BaseDocum
 		}
 	if (!op){ return FILEERROR_UNKNOWN_VALUE;}
 
-	file = BaseFile::Alloc(); if (!file) return FILEERROR_MEMORY; //???
-	if (!file->Open(name,GE_WRITE,FILE_NODIALOG,GE_INTEL)) return file->GetError();
+	file = BaseFile::Alloc(); if (!file) return FILEERROR_OUTOFMEMORY; //???
+	if (!file->Open(name,FILEOPEN_WRITE/*,FILE_NODIALOG,GE_INTEL*/)) return file->GetError();
 	
 	//-------------------------------------------------------------
 	Int32 year = 0,month = 0,day = 0,hour = 0,minute = 0,second = 0; 

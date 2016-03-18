@@ -17,11 +17,11 @@ class IDTagTagData : public TagData
 {
 	INSTANCEOF(IDTagTagData,TagData)
 	public:
-		virtual Bool Init(GeListNode *node);
+		virtual Bool Init(GeListNode *node) override;
 		//virtual Bool Draw(PluginTag *tag, BaseObject *op, BaseDraw *bd, BaseDrawHelp *bh);
-		virtual Int32 Execute(PluginTag *tag, BaseDocument *doc, BaseObject *op, BaseThread *bt, Int32 priority, Int32 flags);
+		virtual EXECUTIONRESULT Execute(BaseTag* tag, BaseDocument* doc, BaseObject* op, BaseThread* bt, Int32 priority, EXECUTIONFLAGS flags) override;
 		//virtual Bool AddToExecution(PluginTag *tag, PriorityList *list);
-		virtual Bool GetDDescription(GeListNode *node, Description *description,Int32 &flags);
+		virtual Bool GetDDescription(GeListNode *node, Description *description, DESCFLAGS_DESC &flags) override;
 		//
 		static NodeData *Alloc(void) { return NewObj(IDTagTagData); }
 };
@@ -36,7 +36,7 @@ Bool IDTagTagData::Init(GeListNode *node)
 	return TRUE;
 }
 //#################################################################
-Bool IDTagTagData::GetDDescription(GeListNode *node, Description *description,Int32 &flags)
+Bool IDTagTagData::GetDDescription(GeListNode *node, Description *description, DESCFLAGS_DESC &flags)
 {
 	if (!description->LoadDescription(node->GetType())) return FALSE;
 
@@ -72,14 +72,14 @@ Bool IDTagTagData::GetDDescription(GeListNode *node, Description *description,In
 }
 
 //#################################################################
-Int32 IDTagTagData::Execute(PluginTag *tag, BaseDocument *doc, BaseObject *op, BaseThread *bt, Int32 priority, Int32 flags)
+EXECUTIONRESULT Execute(BaseTag* tag, BaseDocument* doc, BaseObject* op, BaseThread* bt, Int32 priority, EXECUTIONFLAGS flags)
 {
-	return EXECUTION_RESULT_OK;
+	return EXECUTIONRESULT_OK;
 }
 
 //#################################################################
 Bool RegisterIDTagTag(void)
 {
 	String name=GeLoadString(IDS_IDTAG); if (!name.Content()) return TRUE;
-	return RegisterTagPlugin(DI_IDTAG_TAG_ID,name,TAG_VISIBLE,IDTagTagData::Alloc,"TIDTag","IDTag.tif",0);
+	return RegisterTagPlugin(DI_IDTAG_TAG_ID,name,TAG_VISIBLE,IDTagTagData::Alloc,"TIDTag",AutoBitmap("IDTag.tif"),0);
 }

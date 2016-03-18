@@ -20,7 +20,7 @@ Bool PluginStart(void)
 
 	Int32 err = 0;
 	if (!RegisterASEio()) err++;
-	if (!RegisterT3Dio()) err++;
+	//if (!RegisterT3Dio()) err++;
 	if (!RegisterIDTagTag()) err++;
 
 	if(err==0){
