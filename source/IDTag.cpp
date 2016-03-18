@@ -72,7 +72,7 @@ Bool IDTagTagData::GetDDescription(GeListNode *node, Description *description, D
 }
 
 //#################################################################
-EXECUTIONRESULT Execute(BaseTag* tag, BaseDocument* doc, BaseObject* op, BaseThread* bt, Int32 priority, EXECUTIONFLAGS flags)
+EXECUTIONRESULT IDTagTagData::Execute(BaseTag* tag, BaseDocument* doc, BaseObject* op, BaseThread* bt, Int32 priority, EXECUTIONFLAGS flags)
 {
 	return EXECUTIONRESULT_OK;
 }

@@ -25,7 +25,7 @@ Bool PluginStart(void)
 
 	if(err==0){
 		GePrint("// Remotion 2003-2008: ASE,T3D Export");
-		GeDebugOut(" ASE,T3D Export registred! ");
+		GeDebugOut(" ASE,T3D Export registered! ");
 	}else{
 		GeDebugOut(" ASE,T3D Export ERROR %i",err);
 	}
