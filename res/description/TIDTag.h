@@ -1,0 +1,19 @@
+#ifndef _TIDTag_H_
+#define _TIDTag_H_
+
+
+enum
+{
+
+	ASEIDT_GR1			= 10000,
+
+	ASEIDT_INFO			= 1000,
+	ASEIDT_COLLISION	= 1001,
+
+	ASEIDT_MTLID		= 1100,
+	ASEIDT_SMOOTHING	= 1200,
+
+	ASEIDT_DUMMY__
+};
+
+#endif

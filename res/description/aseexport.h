@@ -1,0 +1,17 @@
+#ifndef _aseexport_H_
+#define _aseexport_H_
+
+enum
+{
+	ASEE_SAVENORMALS = 1000,
+	ASEE_REVERSENORMALS = 1001,
+	ASEE_MATOBPREFIX = 1002,
+	ASEE_COMMADIGITS = 1003,
+	ASEE_JOINOBJECTS = 1004,
+
+
+	ASEE_INFO = 1100,
+	ASEE_DUMMY__
+};
+
+#endif

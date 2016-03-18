@@ -1,0 +1,11 @@
+STRINGTABLE aseexport
+{
+	Faseexport		"ASE Export [Remotion]";
+
+	ASEE_INFO		"Remotion ASE Exporter";
+	ASEE_REVERSENORMALS	"Reverse normals";
+	ASEE_SAVENORMALS	"Save normals (Not for UED !!!)";
+	ASEE_MATOBPREFIX	"Object name in Submaterials";
+	ASEE_COMMADIGITS	"Digits after the comma";
+	ASEE_JOINOBJECTS	"Join the objects";
+}

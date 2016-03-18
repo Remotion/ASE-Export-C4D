@@ -1,0 +1,10 @@
+STRINGTABLE TIDTag
+{
+	TIDTag	"IDTag";
+
+	ASEIDT_GR1			"Advanced";
+
+	ASEIDT_INFO		"Drop PolySelTag";
+	ASEIDT_COLLISION	"Collision";
+	ASEIDT_MTLID	"ID 1";
+}
