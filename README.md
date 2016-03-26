@@ -1,2 +1,2 @@
 # ASE-Export-C4D
-ASE exporter for Maxon C4D (for older versions)
+ASE exporter for Maxon Cinema 4D R17.
